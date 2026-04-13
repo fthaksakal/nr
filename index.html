@@ -107,7 +107,7 @@
 <div id="info-modal" class="hidden">
     <div class="modal-content">
         <h3>Hakkında</h3>
-        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz ama dikkat sarman kedi bi sarmanlık yapabilir.</p>
+        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz. Dİkkat çiçiko piçikoluk yapabilir.</p>
         <span style="font-weight: bold; color: #2196f3;">Geliştirici: Fatih Aksakal</span>
         <button onclick="closeInfo()" style="margin-top: 20px; font-size: 16px; padding: 10px;">Kapat</button>
     </div>
@@ -139,9 +139,9 @@
     let pipeSpriteW = 0;
     pSetImg.onload = () => { pipeSpriteW = pSetImg.width / 5; };
 
-    // SES LİSTESİ (4 SES)
+    // Önyükleme listesi
     const sounds = [new Audio('meow1.mp3'), new Audio('meow2.mp3'), new Audio('meow3.mp3'), new Audio('meow4.mp3')];
-    sounds.forEach(s => { s.load(); s.volume = globalVolume; });
+    sounds.forEach(s => { s.load(); });
 
     function init() { 
         bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 }; 
@@ -201,7 +201,6 @@
                 createHearts(p.x+45, p.y+gap/2);
                 let isBonus = ((score + 1) % 10 === 0);
                 
-                // SES SADECE SARI KEDİDE ÇALAR
                 if (p.tId === yellowIndex || p.bId === yellowIndex) {
                     playMeow();
                     let targetY = (p.tId === yellowIndex) ? p.y - 20 : p.y + gap + 20;
@@ -240,14 +239,15 @@
     function showCharacterSelect() { hideAll(); document.getElementById('char-menu').classList.remove('hidden'); }
     function showSettings(from = 'main') { hideAll(); const saveBtn = document.getElementById('settings-save-btn'); if(from === 'pause') { saveBtn.onclick = () => { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); }; } else { saveBtn.onclick = showMainMenu; } document.getElementById('settings-menu').classList.remove('hidden'); }
     function togglePause() { if(!gameRunning) return; isPaused = !isPaused; if(isPaused) { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); } else { hideAll(); loop(); } }
-    function updateVolume(val) { globalVolume = parseFloat(val); sounds.forEach(s => { s.volume = globalVolume; }); }
+    function updateVolume(val) { globalVolume = parseFloat(val); }
     
-    // RASTGELE SES ÇALMA FONKSİYONU
+    // GÜNCELLENMİŞ RASTGELE SES ÇALMA (CLONE MANTIĞI)
     function playMeow() { 
         if(globalVolume > 0) { 
             let randomIndex = Math.floor(Math.random() * sounds.length);
-            let s = sounds[randomIndex];
-            s.currentTime = 0; 
+            // cloneNode(true) sayesinde aynı ses üst üste tetiklenebilir
+            let s = sounds[randomIndex].cloneNode(true);
+            s.volume = globalVolume;
             s.play().catch(()=>{}); 
         } 
     }
