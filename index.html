@@ -59,15 +59,6 @@
 <div id="score-box" class="hidden">0</div>
 <button id="pause-btn" class="hidden" onclick="togglePause()">II</button>
 
-<div id="info-modal" class="hidden">
-    <div class="modal-content">
-        <h3>Hakkında</h3>
-        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz ama dikkat sarman kedi bi sarmanlık yapabilir.</p>
-        <span style="font-weight: bold; color: #2196f3;">Geliştirici: Fatih Aksakal</span>
-        <button onclick="closeInfo()" style="margin-top: 20px; font-size: 16px; padding: 10px;">Kapat</button>
-    </div>
-</div>
-
 <div id="ui-layer">
     <div id="main-menu" class="menu">
         <button class="info-btn" onclick="openInfo()">?</button>
@@ -142,35 +133,6 @@
     const sounds = [new Audio('meow1.mp3'), new Audio('meow2.mp3'), new Audio('meow3.mp3'), new Audio('meow4.mp3')];
     sounds.forEach(s => { s.load(); s.volume = globalVolume; });
 
-    function openInfo() { document.getElementById('info-modal').classList.remove('hidden'); }
-    function closeInfo() { document.getElementById('info-modal').classList.add('hidden'); }
-    function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu', 'pause-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); }
-    function showMainMenu() { hideAll(); document.getElementById('main-menu').classList.remove('hidden'); scoreEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); updateBestScoreUI(); gameRunning = false; isPaused = false; }
-    function showCharacterSelect() { hideAll(); document.getElementById('char-menu').classList.remove('hidden'); }
-    function showSettings(from = 'main') { hideAll(); const saveBtn = document.getElementById('settings-save-btn'); if(from === 'pause') { saveBtn.onclick = () => { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); }; } else { saveBtn.onclick = showMainMenu; } document.getElementById('settings-menu').classList.remove('hidden'); }
-    function togglePause() { if(!gameRunning) return; isPaused = !isPaused; if(isPaused) { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); } else { hideAll(); loop(); } }
-    function updateVolume(val) { globalVolume = parseFloat(val); sounds.forEach(s => { s.volume = globalVolume; }); }
-    function playMeow() { if(globalVolume > 0) { let s = sounds[Math.floor(Math.random()*sounds.length)]; s.currentTime = 0; s.play().catch(()=>{}); } }
-
-    function drawHeart(x, y, size, color, alpha) {
-        ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-        ctx.beginPath(); ctx.moveTo(x, y + size / 4);
-        ctx.quadraticCurveTo(x, y, x + size / 4, y);
-        ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
-        ctx.quadraticCurveTo(x + size / 2, y, x + size * 3/4, y);
-        ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4);
-        ctx.quadraticCurveTo(x + size, y + size / 2, x + size / 2, y + size * 3/4);
-        ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4);
-        ctx.fill(); ctx.restore();
-    }
-
-    function createHearts(x, y) {
-        let selectedColors = [...heartColors].sort(() => 0.5 - Math.random()).slice(0, 3);
-        selectedColors.forEach(color => {
-            particles.push({ x, y, vx: (Math.random()-0.5)*1.2, vy: (Math.random()-0.5)*1.2, life: 0.7, size: Math.random()*6+4, color: color });
-        });
-    }
-
     function init() { 
         bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 }; 
         pipes = []; treats = []; particles = []; score = 0; bgX = 0; 
@@ -228,30 +190,21 @@
                 p.feed = true; createHearts(p.x+45, p.y+gap/2);
                 let isBonus = ((score + 1) % 10 === 0);
                 
-                // MAMA FIRLATMA MEKANİĞİ GÜNCELLEMESİ
                 if (p.tId === yellowIndex || p.bId === yellowIndex) {
                     playMeow();
                     let targetY = (p.tId === yellowIndex) ? p.y - 20 : p.y + gap + 20;
-                    let count = isBonus ? 6 : 2; // Bonus 10. puan ise 6 mama, değilse 2
+                    let count = isBonus ? 6 : 2;
                     for(let j=0; j < count; j++) {
-                        treats.push({ 
-                            x: bird.x + 40 - (j * 25), 
-                            y: bird.y, 
-                            vy: (targetY - bird.y)/20 + (Math.random()*4 - 2) 
-                        });
+                        treats.push({ x: bird.x + 40 - (j * 25), y: bird.y, vy: (targetY - bird.y)/20 + (Math.random()*4 - 2) });
                     }
                 } else {
-                    let count = isBonus ? 6 : 2; // Bonus 10. puan ise 6 mama, değilse 2
+                    let count = isBonus ? 6 : 2;
                     for(let j=0; j < count; j++) {
-                        // isBonus durumunda ilk 3 mama bir yöne, kalan 3 mama diğer yöne
-                        let direction = (isBonus && j >= 3) ? 3 : -3;
-                        if(!isBonus) direction = (j % 2 === 0 ? -3 : 3);
-
-                        treats.push({ 
-                            x: bird.x + 40 - (j * 25), 
-                            y: bird.y, 
-                            vy: direction + (Math.random()*2 - 1) 
-                        });
+                        // isBonus varsa ilk 3 aşağı (-3 vy), sonraki 3 yukarı (3 vy) gider
+                        let direction = (j % 2 === 0 ? -3 : 3);
+                        if(isBonus) direction = (j < 3) ? -3 : 3; 
+                        
+                        treats.push({ x: bird.x + 40 - (j * 25), y: bird.y, vy: direction + (Math.random()*2 - 1) });
                     }
                 }
             }
@@ -270,8 +223,29 @@
         requestAnimationFrame(loop);
     }
 
+    function openInfo() { document.getElementById('info-modal').classList.remove('hidden'); }
+    function closeInfo() { document.getElementById('info-modal').classList.add('hidden'); }
+    function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu', 'pause-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); }
+    function showMainMenu() { hideAll(); document.getElementById('main-menu').classList.remove('hidden'); scoreEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); updateBestScoreUI(); gameRunning = false; isPaused = false; }
+    function showCharacterSelect() { hideAll(); document.getElementById('char-menu').classList.remove('hidden'); }
+    function showSettings(from = 'main') { hideAll(); const saveBtn = document.getElementById('settings-save-btn'); if(from === 'pause') { saveBtn.onclick = () => { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); }; } else { saveBtn.onclick = showMainMenu; } document.getElementById('settings-menu').classList.remove('hidden'); }
+    function togglePause() { if(!gameRunning) return; isPaused = !isPaused; if(isPaused) { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); } else { hideAll(); loop(); } }
+    function updateVolume(val) { globalVolume = parseFloat(val); sounds.forEach(s => { s.volume = globalVolume; }); }
+    function playMeow() { if(globalVolume > 0) { let s = sounds[Math.floor(Math.random()*sounds.length)]; s.currentTime = 0; s.play().catch(()=>{}); } }
+    function drawHeart(x, y, size, color, alpha) { ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y + size / 4); ctx.quadraticCurveTo(x, y, x + size / 4, y); ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4); ctx.quadraticCurveTo(x + size / 2, y, x + size * 3/4, y); ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4); ctx.quadraticCurveTo(x + size, y + size / 2, x + size / 2, y + size * 3/4); ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4); ctx.fill(); ctx.restore(); }
+    function createHearts(x, y) { let selectedColors = [...heartColors].sort(() => 0.5 - Math.random()).slice(0, 3); selectedColors.forEach(color => { particles.push({ x, y, vx: (Math.random()-0.5)*1.2, vy: (Math.random()-0.5)*1.2, life: 0.7, size: Math.random()*6+4, color: color }); }); }
     function updateBestScoreUI() { const best = localStorage.getItem('naziraBestScore') || 0; document.getElementById('best-score-main').innerText = "En İyi: " + best; document.getElementById('best-score-over').innerText = "En İyi: " + best; }
     updateBestScoreUI();
 </script>
+
+<div id="info-modal" class="hidden">
+    <div class="modal-content">
+        <h3>Hakkında</h3>
+        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz ama dikkat sarman kedi bi sarmanlık yapabilir.</p>
+        <span style="font-weight: bold; color: #2196f3;">Geliştirici: Fatih Aksakal</span>
+        <button onclick="closeInfo()" style="margin-top: 20px; font-size: 16px; padding: 10px;">Kapat</button>
+    </div>
+</div>
+
 </body>
 </html>
