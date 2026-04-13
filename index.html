@@ -228,25 +228,23 @@
                 p.feed = true; createHearts(p.x+45, p.y+gap/2);
                 let isBonus = ((score + 1) % 10 === 0);
                 
-                // MAMA SAYISI VE YATAY BOŞLUK GÜNCELLEMESİ
+                // MAMA KONUMLANDIRMA (SAĞA KAYDIRILMIŞ)
                 if (p.tId === yellowIndex || p.bId === yellowIndex) {
                     playMeow();
                     let targetY = (p.tId === yellowIndex) ? p.y - 20 : p.y + gap + 20;
-                    // Sarı kedi bonusu: 6 mama (aralıklı fırlatma)
                     let count = isBonus ? 6 : 2;
                     for(let j=0; j < count; j++) {
                         treats.push({ 
-                            x: bird.x - (j * 20), // Yatay boşluk (mama-boşluk-mama etkisi)
+                            x: bird.x + 40 - (j * 25), // Sağa doğru kaydırma yapıldı (+40)
                             y: bird.y, 
                             vy: (targetY - bird.y)/20 + (Math.random()*4 - 2) 
                         });
                     }
                 } else {
-                    // Standart bonus: 3 mama (aralıklı fırlatma)
                     let count = isBonus ? 3 : 2;
                     for(let j=0; j < count; j++) {
                         treats.push({ 
-                            x: bird.x - (j * 20), // Yatay boşluk
+                            x: bird.x + 40 - (j * 25), // Sağa doğru kaydırma yapıldı (+40)
                             y: bird.y, 
                             vy: (j % 2 === 0 ? -3 : 3) + (Math.random()*2 - 1) 
                         });
