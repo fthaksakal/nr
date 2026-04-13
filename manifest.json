@@ -1,0 +1,14 @@
+{
+  "short_name": "Nazira",
+  "name": "Nazira'nın Rüyası",
+  "icons": [
+    {
+      "src": "bird1.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait"
+}
