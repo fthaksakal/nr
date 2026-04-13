@@ -69,7 +69,7 @@
     <div id="char-menu" class="menu hidden">
         <h2 style="margin-top:0;">Karakter Seç</h2>
         <div class="grid">
-            <div class="card active" data-src="bird1.png"><img src="bird1.png" width="45" onerror="console.log('bird1.png eksik!')"><span style="font-weight: bold;">Nazira</span></div>
+            <div class="card active" data-src="bird1.png"><img src="bird1.png" width="45"><span style="font-weight: bold;">Nazira</span></div>
         </div>
         <button onclick="startGame()">BAŞLA</button>
         <button class="btn-gray" onclick="showMainMenu()">GERİ</button>
@@ -108,28 +108,19 @@
     let globalVolume = 0.5;
     let currentSpeed = 2.8, currentBgSpeed = 1.2;
     const baseSpeed = 2.8, baseBgSpeed = 1.2;
-    const grav = 0.25, jumpPower = -4.5, pipeW = 90, gap = 185;
+    const grav = 0.25, jumpPower = -4.5, gap = 185;
 
     const bImg = new Image();
     const bgImg = new Image(); 
     const pSetImg = new Image(); 
     let pipeSpriteW = 0;
 
-    // Dosyaları yüklerken hata kontrolü
-    bgImg.onerror = () => console.log("background.png yüklenemedi!");
-    pSetImg.onerror = () => console.log("pipeset.png yüklenemedi!");
-    bImg.onerror = () => console.log("bird görseli yüklenemedi!");
-
     bgImg.src = 'background.png';
     pSetImg.src = 'pipeset.png';
     pSetImg.onload = () => { pipeSpriteW = pSetImg.width / 5; };
 
     const sounds = [new Audio('meow1.mp3'), new Audio('meow2.mp3'), new Audio('meow3.mp3'), new Audio('meow4.mp3')];
-    sounds.forEach(s => { 
-        s.load(); 
-        s.volume = globalVolume; 
-        s.onerror = () => console.log("Ses dosyası eksik!");
-    });
+    sounds.forEach(s => { s.load(); s.volume = globalVolume; });
 
     function openInfo() { document.getElementById('info-modal').classList.remove('hidden'); }
     function closeInfo() { document.getElementById('info-modal').classList.add('hidden'); }
@@ -162,28 +153,29 @@
     }
 
     function createHearts(x, y) {
-        for(let i=0; i<9; i++) {
+        // Havuzdaki 9 renkten rastgele 3 tanesini seçiyoruz
+        let selectedColors = [...heartColors].sort(() => 0.5 - Math.random()).slice(0, 3);
+        selectedColors.forEach(color => {
             particles.push({ 
                 x, y, 
                 vx: (Math.random()-0.5)*5, 
                 vy: (Math.random()-0.5)*5, 
                 life: 1.0, 
                 size: Math.random()*10+7, 
-                color: heartColors[i] 
+                color: color 
             });
-        }
+        });
     }
 
     function init() {
         bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 };
         pipes = []; treats = []; particles = []; score = 0; bgX = 0;
         currentSpeed = baseSpeed; currentBgSpeed = baseBgSpeed;
-        scoreEl.innerText = "0"; 
-        bImg.src = selectedSrc;
+        scoreEl.innerText = "0"; bImg.src = selectedSrc;
     }
 
-    function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; requestAnimationFrame(loop); }
-    function restartGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; requestAnimationFrame(loop); }
+    function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; loop(); }
+    function restartGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; loop(); }
     
     function die() { 
         gameRunning = false; 
@@ -194,18 +186,12 @@
         document.getElementById('over-menu').classList.remove('hidden'); 
     }
 
-    window.onmousedown = (e) => { if(gameRunning) bird.vel = jumpPower; };
-    window.ontouchstart = (e) => { 
-        if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') { 
-            if(gameRunning) bird.vel = jumpPower; 
-        } 
-    };
+    window.onmousedown = () => { if(gameRunning) bird.vel = jumpPower; };
+    window.ontouchstart = (e) => { if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') { if(gameRunning) bird.vel = jumpPower; } };
 
     function loop() {
         if(!gameRunning) return;
-        
-        ctx.fillStyle = "#70c5ce"; 
-        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "#70c5ce"; ctx.fillRect(0,0,canvas.width,canvas.height);
 
         if(bgImg.complete) {
             bgX -= currentBgSpeed; if(bgX <= -canvas.width) bgX = 0;
@@ -214,21 +200,19 @@
         }
 
         bird.vel += grav; bird.y += bird.vel;
-        
-        if(bImg.complete) {
-            ctx.save(); 
-            ctx.translate(bird.x+20, bird.y+15); 
-            ctx.rotate(Math.max(-0.5, Math.min(0.5, bird.vel*0.1)));
-            ctx.drawImage(bImg, -20, -15, 40, 30); 
-            ctx.restore();
-        }
+        ctx.save(); ctx.translate(bird.x+20, bird.y+15); ctx.rotate(Math.max(-0.5, Math.min(0.5, bird.vel*0.1)));
+        ctx.drawImage(bImg, -20, -15, 40, 30); ctx.restore();
 
+        // Mamalar
         for(let i = treats.length-1; i>=0; i--) {
-            let t = treats[i]; t.x -= currentSpeed; t.y += t.vy;
+            let t = treats[i]; 
+            t.x -= (currentSpeed * 0.8); // Mama hızı biraz daha yavaş ki takip edilebilsin
+            t.y += t.vy;
             ctx.beginPath(); ctx.fillStyle = "#795548"; ctx.arc(t.x, t.y, 7, 0, Math.PI*2); ctx.fill();
             if(t.x < -20) treats.splice(i,1);
         }
 
+        // Kalpler
         for(let i = particles.length-1; i>=0; i--) {
             let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.02;
             if(p.life <= 0) { particles.splice(i,1); continue; }
@@ -253,9 +237,24 @@
                 if (p.tId === yellowIndex || p.bId === yellowIndex) {
                     playMeow();
                     let targetY = (p.tId === yellowIndex) ? p.y - 20 : p.y + gap + 20;
-                    for(let j=0; j<(isBonus ? 10 : 2); j++) treats.push({ x: bird.x, y: bird.y, vy: (targetY - bird.y)/20 + (Math.random()-0.5)*5 });
+                    let mCount = isBonus ? 10 : 2;
+                    for(let j=0; j < mCount; j++) {
+                        // Dağılım aralığını açmak için vy ve x ofsetine rastgelelik ekliyoruz
+                        treats.push({ 
+                            x: bird.x + (Math.random()*20 - 10), 
+                            y: bird.y, 
+                            vy: (targetY - bird.y)/15 + (Math.random()*8 - 4) 
+                        });
+                    }
                 } else {
-                    for(let j=0; j<(isBonus ? 5 : 2); j++) treats.push({ x: bird.x, y: bird.y, vy: (j%2===0 ? -6 : 6) });
+                    let mCount = isBonus ? 5 : 2;
+                    for(let j=0; j < mCount; j++) {
+                        treats.push({ 
+                            x: bird.x + (Math.random()*20 - 10), 
+                            y: bird.y, 
+                            vy: (j % 2 === 0 ? -7 : 7) + (Math.random()*4 - 2) 
+                        });
+                    }
                 }
             }
 
