@@ -63,7 +63,7 @@
 <div id="info-modal" class="hidden">
     <div class="modal-content">
         <h3>Hakkında</h3>
-        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz. Dikkat! çiçiko piçikoluk yapabilir.</p>
+        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz ama dikkat sarman kedi bi sarmanlık yapabilir.</p>
         <span style="font-weight: bold; color: #2196f3;">Geliştirici: Fatih Aksakal</span>
         <button onclick="closeInfo()" style="margin-top: 20px; font-size: 16px; padding: 10px;">Kapat</button>
     </div>
@@ -132,6 +132,9 @@
     const baseSpeed = 2.8, baseBgSpeed = 1.2;
     const grav = 0.25, jumpPower = -4.5, gap = 185;
 
+    // Smooth Transition için dikey sınır değişkeni
+    let lastPipeY = canvas.height / 2 - gap / 2;
+
     const bImg = new Image();
     const bgImg = new Image(); bgImg.src = 'background.png';
     const pSetImg = new Image(); pSetImg.src = 'pipeset.png';
@@ -144,7 +147,6 @@
     function openInfo() { document.getElementById('info-modal').classList.remove('hidden'); }
     function closeInfo() { document.getElementById('info-modal').classList.add('hidden'); }
     function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu', 'pause-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); }
-    
     function showMainMenu() { hideAll(); document.getElementById('main-menu').classList.remove('hidden'); scoreEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); updateBestScoreUI(); gameRunning = false; isPaused = false; }
     function showCharacterSelect() { hideAll(); document.getElementById('char-menu').classList.remove('hidden'); }
     function showSettings(from = 'main') { hideAll(); const saveBtn = document.getElementById('settings-save-btn'); if(from === 'pause') { saveBtn.onclick = () => { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); }; } else { saveBtn.onclick = showMainMenu; } document.getElementById('settings-menu').classList.remove('hidden'); }
@@ -167,21 +169,18 @@
     function createHearts(x, y) {
         let selectedColors = [...heartColors].sort(() => 0.5 - Math.random()).slice(0, 3);
         selectedColors.forEach(color => {
-            particles.push({ 
-                x, y, 
-                // Saçılım (dağılım) hızı yarı yarıya azaltıldı
-                vx: (Math.random()-0.5)*1.2, 
-                vy: (Math.random()-0.5)*1.2, 
-                // Saydamlık bi tık artırıldı (daha şeffaf başlar ve daha hızlı yok olur)
-                life: 0.7, 
-                // Boyut bi tık küçültüldü
-                size: Math.random()*6+4, 
-                color: color 
-            });
+            particles.push({ x, y, vx: (Math.random()-0.5)*1.2, vy: (Math.random()-0.5)*1.2, life: 0.7, size: Math.random()*6+4, color: color });
         });
     }
 
-    function init() { bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 }; pipes = []; treats = []; particles = []; score = 0; bgX = 0; currentSpeed = baseSpeed; currentBgSpeed = baseBgSpeed; scoreEl.innerText = "0"; bImg.src = selectedSrc; isPaused = false; }
+    function init() { 
+        bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 }; 
+        pipes = []; treats = []; particles = []; score = 0; bgX = 0; 
+        currentSpeed = baseSpeed; currentBgSpeed = baseBgSpeed; 
+        scoreEl.innerText = "0"; bImg.src = selectedSrc; isPaused = false;
+        lastPipeY = canvas.height / 2 - gap / 2; // Yükseklik hafızasını sıfırla
+    }
+
     function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); pauseBtn.classList.remove('hidden'); gameRunning = true; loop(); }
     function restartGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); pauseBtn.classList.remove('hidden'); gameRunning = true; loop(); }
     function die() { gameRunning = false; pauseBtn.classList.add('hidden'); const best = localStorage.getItem('naziraBestScore') || 0; if(score > best) localStorage.setItem('naziraBestScore', score); updateBestScoreUI(); document.getElementById('final-text').innerText = "Skor: " + score; document.getElementById('over-menu').classList.remove('hidden'); }
@@ -210,15 +209,26 @@
         }
 
         for(let i = particles.length-1; i>=0; i--) {
-            let p = particles[i]; p.x += p.vx; p.y += p.vy; 
-            // Daha narin yok olma efekti
-            p.life -= 0.03; 
+            let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.03; 
             if(p.life <= 0) { particles.splice(i,1); continue; }
             drawHeart(p.x, p.y, p.size, p.color, p.life);
         }
 
         if(pipes.length === 0 || pipes[pipes.length-1].x < canvas.width - 250) {
-            let h = Math.random() * (canvas.height - gap - 240) + 120;
+            // OPTİMİZE EDİLMİŞ RASTGELELİK:
+            // Bir sonraki boru, bir öncekinden en fazla 160px uzaklıkta olabilir
+            const maxDiff = 160; 
+            const minH = 100;
+            const maxH = canvas.height - gap - 120;
+            
+            let h = lastPipeY + (Math.random() * (maxDiff * 2) - maxDiff);
+            
+            // Ekran sınırlarını koru
+            if (h < minH) h = minH + Math.random() * 50;
+            if (h > maxH) h = maxH - Math.random() * 50;
+            
+            lastPipeY = h; // Bir sonraki hesaplama için kaydet
+
             let tId = Math.floor(Math.random()*5), bId;
             do { bId = Math.floor(Math.random()*5); } while(bId === tId);
             pipes.push({ x: canvas.width, y: h, done: false, feed: false, tId, bId });
