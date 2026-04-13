@@ -28,12 +28,24 @@
             display: flex; justify-content: center; align-items: center;
         }
         
+        /* Pause Butonu Stili */
+        #pause-btn {
+            position: absolute; top: 30px; left: 30px; 
+            width: 50px; height: 50px; 
+            background: white; border: none; border-radius: 12px;
+            color: #2196f3; font-size: 24px; font-weight: bold; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 50; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
         #info-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: white; padding: 20px; border-radius: 20px; width: 80%; max-width: 300px; text-align: center; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-        .card { border: 3px solid #eee; padding: 10px; border-radius: 15px; cursor: pointer; background: white; display: flex; flex-direction: column; align-items: center; }
+        .card { border: 3px solid #eee; padding: 10px; border-radius: 15px; cursor: pointer; background: white; display: flex; flex-direction: column; align-items: center; position: relative; }
         .card.active { border-color: #e31e24; background: #fff5f5; }
+        .card.locked { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
+        .locked-text { position: absolute; bottom: 5px; font-size: 10px; color: #777; font-weight: bold; }
         
         button { background: #4caf50; color: white; border: none; padding: 15px; border-radius: 12px; font-size: 20px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .btn-blue { background: #2196f3; }
@@ -47,6 +59,7 @@
 <body>
 
 <div id="score-box" class="hidden">0</div>
+<button id="pause-btn" class="hidden" onclick="togglePause()">II</button>
 
 <div id="info-modal" class="hidden">
     <div class="modal-content">
@@ -70,16 +83,25 @@
         <h2 style="margin-top:0;">Karakter Seç</h2>
         <div class="grid">
             <div class="card active" data-src="bird1.png"><img src="bird1.png" width="45"><span style="font-weight: bold;">Nazira</span></div>
+            <div class="card locked">❌<span style="font-weight: bold;">?</span><span class="locked-text">Yakında</span></div>
+            <div class="card locked">❌<span style="font-weight: bold;">?</span><span class="locked-text">Yakında</span></div>
+            <div class="card locked">❌<span style="font-weight: bold;">?</span><span class="locked-text">Yakında</span></div>
         </div>
         <button onclick="startGame()">BAŞLA</button>
         <button class="btn-gray" onclick="showMainMenu()">GERİ</button>
+    </div>
+
+    <div id="pause-menu" class="menu hidden">
+        <h2 style="margin-top:0;">Oyun Durdu</h2>
+        <button onclick="togglePause()">DEVAM ET</button>
+        <button class="btn-gray" onclick="showSettings('pause')">AYARLAR</button>
     </div>
 
     <div id="settings-menu" class="menu hidden">
         <h2>Ayarlar</h2>
         <label style="font-weight: bold;">Ses Seviyesi</label>
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5" style="width:100%; margin: 20px 0;" oninput="updateVolume(this.value)">
-        <button onclick="showMainMenu()">KAYDET</button>
+        <button id="settings-save-btn" onclick="showMainMenu()">KAYDET</button>
     </div>
 
     <div id="over-menu" class="menu hidden">
@@ -97,6 +119,7 @@
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d', { alpha: false });
     const scoreEl = document.getElementById('score-box');
+    const pauseBtn = document.getElementById('pause-btn');
     
     canvas.width = Math.min(window.innerWidth, 400);
     canvas.height = window.innerHeight;
@@ -104,19 +127,16 @@
     const yellowIndex = 2; 
     const heartColors = ["#FF0000", "#FF69B4", "#8A2BE2", "#FFD700", "#FF8C00", "#1E90FF", "#32CD32", "#FFFFFF", "#00CED1"];
     
-    let bird, pipes, treats, particles, score, gameRunning = false, selectedSrc = "bird1.png", bgX = 0;
+    let bird, pipes, treats, particles, score, gameRunning = false, isPaused = false, selectedSrc = "bird1.png", bgX = 0;
     let globalVolume = 0.5;
     let currentSpeed = 2.8, currentBgSpeed = 1.2;
     const baseSpeed = 2.8, baseBgSpeed = 1.2;
     const grav = 0.25, jumpPower = -4.5, gap = 185;
 
     const bImg = new Image();
-    const bgImg = new Image(); 
-    const pSetImg = new Image(); 
+    const bgImg = new Image(); bgImg.src = 'background.png';
+    const pSetImg = new Image(); pSetImg.src = 'pipeset.png';
     let pipeSpriteW = 0;
-
-    bgImg.src = 'background.png';
-    pSetImg.src = 'pipeset.png';
     pSetImg.onload = () => { pipeSpriteW = pSetImg.width / 5; };
 
     const sounds = [new Audio('meow1.mp3'), new Audio('meow2.mp3'), new Audio('meow3.mp3'), new Audio('meow4.mp3')];
@@ -124,10 +144,42 @@
 
     function openInfo() { document.getElementById('info-modal').classList.remove('hidden'); }
     function closeInfo() { document.getElementById('info-modal').classList.add('hidden'); }
-    function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); }
-    function showMainMenu() { hideAll(); document.getElementById('main-menu').classList.remove('hidden'); scoreEl.classList.add('hidden'); updateBestScoreUI(); gameRunning = false; }
+    function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu', 'pause-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); }
+    
+    function showMainMenu() { 
+        hideAll(); 
+        document.getElementById('main-menu').classList.remove('hidden'); 
+        scoreEl.classList.add('hidden'); 
+        pauseBtn.classList.add('hidden');
+        updateBestScoreUI(); 
+        gameRunning = false; 
+        isPaused = false;
+    }
+
     function showCharacterSelect() { hideAll(); document.getElementById('char-menu').classList.remove('hidden'); }
-    function showSettings() { hideAll(); document.getElementById('settings-menu').classList.remove('hidden'); }
+    
+    function showSettings(from = 'main') { 
+        hideAll(); 
+        const saveBtn = document.getElementById('settings-save-btn');
+        if(from === 'pause') {
+            saveBtn.onclick = () => { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); };
+        } else {
+            saveBtn.onclick = showMainMenu;
+        }
+        document.getElementById('settings-menu').classList.remove('hidden'); 
+    }
+
+    function togglePause() {
+        if(!gameRunning) return;
+        isPaused = !isPaused;
+        if(isPaused) {
+            hideAll();
+            document.getElementById('pause-menu').classList.remove('hidden');
+        } else {
+            hideAll();
+            loop(); // Döngüyü tekrar başlat
+        }
+    }
     
     function updateVolume(val) { 
         globalVolume = parseFloat(val); 
@@ -137,33 +189,21 @@
     function playMeow() { if(globalVolume > 0) { let s = sounds[Math.floor(Math.random()*sounds.length)]; s.currentTime = 0; s.play().catch(()=>{}); } }
 
     function drawHeart(x, y, size, color, alpha) {
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(x, y + size / 4);
+        ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
+        ctx.beginPath(); ctx.moveTo(x, y + size / 4);
         ctx.quadraticCurveTo(x, y, x + size / 4, y);
         ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
         ctx.quadraticCurveTo(x + size / 2, y, x + size * 3/4, y);
         ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4);
         ctx.quadraticCurveTo(x + size, y + size / 2, x + size / 2, y + size * 3/4);
         ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4);
-        ctx.fill();
-        ctx.restore();
+        ctx.fill(); ctx.restore();
     }
 
     function createHearts(x, y) {
-        // Havuzdaki 9 renkten rastgele 3 tanesini seçiyoruz
         let selectedColors = [...heartColors].sort(() => 0.5 - Math.random()).slice(0, 3);
         selectedColors.forEach(color => {
-            particles.push({ 
-                x, y, 
-                vx: (Math.random()-0.5)*5, 
-                vy: (Math.random()-0.5)*5, 
-                life: 1.0, 
-                size: Math.random()*10+7, 
-                color: color 
-            });
+            particles.push({ x, y, vx: (Math.random()-0.5)*2.5, vy: (Math.random()-0.5)*2.5, life: 1.0, size: Math.random()*8+6, color: color });
         });
     }
 
@@ -172,13 +212,30 @@
         pipes = []; treats = []; particles = []; score = 0; bgX = 0;
         currentSpeed = baseSpeed; currentBgSpeed = baseBgSpeed;
         scoreEl.innerText = "0"; bImg.src = selectedSrc;
+        isPaused = false;
     }
 
-    function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; loop(); }
-    function restartGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; loop(); }
+    function startGame() { 
+        hideAll(); 
+        init(); 
+        scoreEl.classList.remove('hidden'); 
+        pauseBtn.classList.remove('hidden');
+        gameRunning = true; 
+        loop(); 
+    }
+
+    function restartGame() { 
+        hideAll(); 
+        init(); 
+        scoreEl.classList.remove('hidden'); 
+        pauseBtn.classList.remove('hidden');
+        gameRunning = true; 
+        loop(); 
+    }
     
     function die() { 
         gameRunning = false; 
+        pauseBtn.classList.add('hidden');
         const best = localStorage.getItem('naziraBestScore') || 0;
         if(score > best) localStorage.setItem('naziraBestScore', score);
         updateBestScoreUI();
@@ -186,11 +243,17 @@
         document.getElementById('over-menu').classList.remove('hidden'); 
     }
 
-    window.onmousedown = () => { if(gameRunning) bird.vel = jumpPower; };
-    window.ontouchstart = (e) => { if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') { if(gameRunning) bird.vel = jumpPower; } };
+    window.onmousedown = (e) => { 
+        if(e.target.id === 'pause-btn') return;
+        if(gameRunning && !isPaused) bird.vel = jumpPower; 
+    };
+    window.ontouchstart = (e) => { 
+        if(e.target.id === 'pause-btn' || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+        if(gameRunning && !isPaused) { e.preventDefault(); bird.vel = jumpPower; } 
+    };
 
     function loop() {
-        if(!gameRunning) return;
+        if(!gameRunning || isPaused) return;
         ctx.fillStyle = "#70c5ce"; ctx.fillRect(0,0,canvas.width,canvas.height);
 
         if(bgImg.complete) {
@@ -203,18 +266,14 @@
         ctx.save(); ctx.translate(bird.x+20, bird.y+15); ctx.rotate(Math.max(-0.5, Math.min(0.5, bird.vel*0.1)));
         ctx.drawImage(bImg, -20, -15, 40, 30); ctx.restore();
 
-        // Mamalar
         for(let i = treats.length-1; i>=0; i--) {
-            let t = treats[i]; 
-            t.x -= (currentSpeed * 0.8); // Mama hızı biraz daha yavaş ki takip edilebilsin
-            t.y += t.vy;
+            let t = treats[i]; t.x -= (currentSpeed * 0.9); t.y += t.vy;
             ctx.beginPath(); ctx.fillStyle = "#795548"; ctx.arc(t.x, t.y, 7, 0, Math.PI*2); ctx.fill();
             if(t.x < -20) treats.splice(i,1);
         }
 
-        // Kalpler
         for(let i = particles.length-1; i>=0; i--) {
-            let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+            let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.025;
             if(p.life <= 0) { particles.splice(i,1); continue; }
             drawHeart(p.x, p.y, p.size, p.color, p.life);
         }
@@ -228,47 +287,26 @@
 
         for(let i = pipes.length-1; i>=0; i--) {
             let p = pipes[i]; p.x -= currentSpeed;
-
             if(!p.feed && bird.x > p.x) {
-                p.feed = true; 
-                createHearts(p.x+45, p.y+gap/2);
+                p.feed = true; createHearts(p.x+45, p.y+gap/2);
                 let isBonus = ((score + 1) % 10 === 0);
-                
                 if (p.tId === yellowIndex || p.bId === yellowIndex) {
                     playMeow();
                     let targetY = (p.tId === yellowIndex) ? p.y - 20 : p.y + gap + 20;
-                    let mCount = isBonus ? 10 : 2;
-                    for(let j=0; j < mCount; j++) {
-                        // Dağılım aralığını açmak için vy ve x ofsetine rastgelelik ekliyoruz
-                        treats.push({ 
-                            x: bird.x + (Math.random()*20 - 10), 
-                            y: bird.y, 
-                            vy: (targetY - bird.y)/15 + (Math.random()*8 - 4) 
-                        });
-                    }
+                    for(let j=0; j < (isBonus ? 10 : 2); j++) treats.push({ x: bird.x, y: bird.y, vy: (targetY - bird.y)/20 + (Math.random()*4 - 2) });
                 } else {
-                    let mCount = isBonus ? 5 : 2;
-                    for(let j=0; j < mCount; j++) {
-                        treats.push({ 
-                            x: bird.x + (Math.random()*20 - 10), 
-                            y: bird.y, 
-                            vy: (j % 2 === 0 ? -7 : 7) + (Math.random()*4 - 2) 
-                        });
-                    }
+                    for(let j=0; j < (isBonus ? 5 : 2); j++) treats.push({ x: bird.x, y: bird.y, vy: (j % 2 === 0 ? -3 : 3) + (Math.random()*2 - 1) });
                 }
             }
-
             if(pSetImg.complete && pipeSpriteW) {
                 ctx.save(); ctx.translate(p.x+45, p.y/2); ctx.scale(1,-1);
                 ctx.drawImage(pSetImg, p.tId*pipeSpriteW, 0, pipeSpriteW, pSetImg.height, -45, -p.y/2, 90, p.y);
                 ctx.restore();
                 ctx.drawImage(pSetImg, p.bId*pipeSpriteW, 0, pipeSpriteW, pSetImg.height, p.x, p.y+gap, 90, canvas.height-(p.y+gap));
             }
-
             if (bird.x + 35 > p.x + 5 && bird.x < p.x + 85) {
                 if (bird.y < p.y - 5 || bird.y + 25 > p.y + gap + 5) { die(); return; }
             }
-
             if(!p.done && p.x + 90 < bird.x) { 
                 score++; scoreEl.innerText = score; p.done = true; 
                 if(score % 5 === 0) { currentSpeed *= 1.05; currentBgSpeed *= 1.05; }
