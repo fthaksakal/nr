@@ -14,57 +14,23 @@
     <meta name="apple-mobile-web-app-title" content="Nazira">
 
     <style>
-        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Segoe UI', 'Comic Sans MS', sans-serif; touch-action: manipulation; }
+        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Segoe UI', sans-serif; touch-action: manipulation; }
         canvas { display: block; margin: 0 auto; background: #70c5ce; }
-        
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 20; }
         .menu { background: white; padding: 25px; border-radius: 25px; text-align: center; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; }
-        
-        .game-title { font-size: 52px; font-weight: 900; color: #e31e24; line-height: 0.95; margin-bottom: 35px; text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5); letter-spacing: -1px; }
-        
-        .info-btn { 
-            position: absolute; top: 15px; right: 15px; 
-            background: #2196f3; color: white; width: 30px; height: 30px; 
-            border-radius: 50%; border: none; font-weight: bold; cursor: pointer; 
-            font-size: 18px; line-height: 30px; padding: 0;
-        }
-
-        #info-modal {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center;
-            z-index: 100;
-        }
-        .modal-content { 
-            background: white; padding: 20px; border-radius: 20px; 
-            width: 80%; max-width: 300px; text-align: center; position: relative;
-        }
-        .modal-content h3 { color: #e31e24; margin-top: 0; }
-        .modal-content p { font-size: 15px; color: #444; line-height: 1.5; }
-        .dev-name { font-weight: bold; color: #2196f3; margin-top: 15px; display: block; }
-
+        .game-title { font-size: 52px; font-weight: 900; color: #e31e24; line-height: 0.95; margin-bottom: 35px; text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-        .card { border: 3px solid #eee; padding: 10px; border-radius: 15px; cursor: pointer; background: white; position: relative; transition: 0.2s; min-height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .card { border: 3px solid #eee; padding: 10px; border-radius: 15px; cursor: pointer; background: white; position: relative; display: flex; flex-direction: column; align-items: center; }
         .card.active { border-color: #e31e24; background: #fff5f5; }
-        
         .card.locked { cursor: not-allowed; opacity: 0.7; background: #f5f5f5; }
         .card.locked img { filter: grayscale(1) blur(1px); }
-        .lock-overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.1); border-radius: 12px;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            font-size: 11px; font-weight: bold; color: #333;
-        }
-        .lock-icon { font-size: 18px; margin-bottom: 2px; }
-
-        .card img { width: 45px; height: 45px; object-fit: contain; display: block; margin-bottom: 5px; }
-        
+        .lock-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.1); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; }
+        .card img { width: 45px; height: 45px; object-fit: contain; }
         button { background: #4caf50; color: white; border: none; padding: 15px; border-radius: 12px; font-size: 20px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .btn-blue { background: #2196f3; }
         .btn-gray { background: #9e9e9e; }
-        
         #score-box { position: absolute; top: 30px; right: 30px; font-size: 45px; color: white; font-weight: 900; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); z-index: 50; }
         .hidden { display: none !important; }
-        
         .high-score-text { font-size: 16px; color: #666; margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
@@ -72,18 +38,8 @@
 
 <div id="score-box" class="hidden">0</div>
 
-<div id="info-modal" class="hidden">
-    <div class="modal-content">
-        <h3>Hakkında</h3>
-        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz ama dikkat sarman kedi bi sarmanlık yapabilir.</p>
-        <span class="dev-name">Geliştirici: Fatih Aksakal</span>
-        <button onclick="closeInfo()" style="margin-top: 20px; font-size: 16px; padding: 10px;">Kapat</button>
-    </div>
-</div>
-
 <div id="ui-layer">
     <div id="main-menu" class="menu">
-        <button class="info-btn" onclick="openInfo()">?</button>
         <div class="game-title">Nazira'nın<br>Rüyası</div>
         <div id="best-score-main" class="high-score-text">En İyi: 0</div>
         <button onclick="showCharacterSelect()">OYNA</button>
@@ -93,23 +49,10 @@
     <div id="char-menu" class="menu hidden">
         <h2 style="margin-top:0;">Karakter Seç</h2>
         <div class="grid">
-            <div class="card active" data-src="bird1.png">
-                <img src="bird1.png">
-                <span style="font-weight: bold; font-size: 14px;">Nazira</span>
-            </div>
-            
-            <div class="card locked">
-                <img src="bird2.png">
-                <div class="lock-overlay"><span class="lock-icon">🔒</span>Yakında</div>
-            </div>
-            <div class="card locked">
-                <img src="bird3.png">
-                <div class="lock-overlay"><span class="lock-icon">🔒</span>Yakında</div>
-            </div>
-            <div class="card locked">
-                <img src="bird4.png">
-                <div class="lock-overlay"><span class="lock-icon">🔒</span>Yakında</div>
-            </div>
+            <div class="card active" data-src="bird1.png"><img src="bird1.png"><span style="font-weight: bold; font-size: 14px;">Nazira</span></div>
+            <div class="card locked"><img src="bird2.png"><div class="lock-overlay">🔒 Yakında</div></div>
+            <div class="card locked"><img src="bird3.png"><div class="lock-overlay">🔒 Yakında</div></div>
+            <div class="card locked"><img src="bird4.png"><div class="lock-overlay">🔒 Yakında</div></div>
         </div>
         <button onclick="startGame()">BAŞLA</button>
         <button class="btn-gray" onclick="showMainMenu()">GERİ</button>
@@ -127,7 +70,6 @@
         <div id="best-score-over" class="high-score-text">En İyi: 0</div>
         <button onclick="restartGame()">TEKRAR DENE</button>
         <button class="btn-blue" onclick="showCharacterSelect()">KARAKTER SEÇ</button>
-        <button class="btn-gray" onclick="showMainMenu()">ANA MENÜ</button>
     </div>
 </div>
 
@@ -135,36 +77,31 @@
 
 <script>
     const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false }); // Performans için alpha kanalını kapattık
     const scoreEl = document.getElementById('score-box');
     
     canvas.width = Math.min(window.innerWidth, 400);
     canvas.height = window.innerHeight;
 
-    const yellowIndex = 2; 
     let bird, pipes, treats, particles, score, gameRunning = false, selectedSrc = "bird1.png", bgX = 0;
-    let requestId, globalVolume = 0.5, lastSoundIdx = -1;
-    
-    let currentSpeed = 2.8; 
-    let currentBgSpeed = 1.2;
-    const baseSpeed = 2.8;
-    const baseBgSpeed = 1.2;
-
+    let globalVolume = 0.5, lastSoundIdx = -1;
+    let currentSpeed = 2.8, currentBgSpeed = 1.2;
+    const baseSpeed = 2.8, baseBgSpeed = 1.2;
     const grav = 0.25, jumpPower = -4.5, pipeW = 90, gap = 185;
 
-    const RED = "#FF0000", YELLOW = "#FFD700", ORANGE = "#FF8C00";
-    const heartColors = [RED, RED, YELLOW, "#FFFFFF", "#FF69B4", ORANGE, "#C77DFF", "#00F5FF", "#FFCC00", "#87CEEB"];
-
+    // RESİM VE SES ÖN YÜKLEME (CACHE)
     const bImg = new Image();
     const bgImg = new Image(); bgImg.src = 'background.png';
-    const sounds = [new Audio('meow1.mp3'), new Audio('meow2.mp3'), new Audio('meow3.mp3'), new Audio('meow4.mp3')];
-    sounds.forEach(s => { s.preload = 'auto'; s.volume = globalVolume; });
-
-    const pSetImg = new Image(); pSetImg.src = 'pipeset.png'; 
-    let pipeSpriteW; 
+    const pSetImg = new Image(); pSetImg.src = 'pipeset.png';
+    let pipeSpriteW = 0;
     pSetImg.onload = () => { pipeSpriteW = pSetImg.width / 5; };
 
-    updateBestScoreUI();
+    // SES OPTİMİZASYONU: Sesleri önceden yükle ve hazır beklet
+    const sounds = [
+        new Audio('meow1.mp3'), new Audio('meow2.mp3'), 
+        new Audio('meow3.mp3'), new Audio('meow4.mp3')
+    ];
+    sounds.forEach(s => { s.load(); s.volume = globalVolume; });
 
     function updateBestScoreUI() {
         const best = localStorage.getItem('naziraBestScore') || 0;
@@ -172,21 +109,21 @@
         document.getElementById('best-score-over').innerText = "En İyi: " + best;
     }
 
-    function openInfo() { document.getElementById('info-modal').classList.remove('hidden'); }
-    function closeInfo() { document.getElementById('info-modal').classList.add('hidden'); }
-    function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); scoreEl.classList.add('hidden'); }
+    function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); }
     function showMainMenu() { updateBestScoreUI(); hideAll(); document.getElementById('main-menu').classList.remove('hidden'); }
     function showCharacterSelect() { hideAll(); document.getElementById('char-menu').classList.remove('hidden'); }
     function showSettings() { hideAll(); document.getElementById('settings-menu').classList.remove('hidden'); }
     function updateVolume(val) { globalVolume = val; sounds.forEach(s => s.volume = globalVolume); }
 
-    document.querySelectorAll('.card:not(.locked)').forEach(c => {
-        c.onclick = () => {
-            document.querySelectorAll('.card').forEach(x => x.classList.remove('active'));
-            c.classList.add('active');
-            selectedSrc = c.dataset.src;
-        };
-    });
+    function playRandomMeow() {
+        if(globalVolume === 0) return;
+        let idx;
+        do { idx = Math.floor(Math.random() * sounds.length); } while (idx === lastSoundIdx);
+        lastSoundIdx = idx;
+        let s = sounds[idx];
+        s.currentTime = 0; // Sesi başa sar (Takılmayı önler)
+        s.play().catch(() => {}); // Kullanıcı etkileşimi yoksa hata vermemesi için
+    }
 
     function init() {
         bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 };
@@ -195,60 +132,28 @@
         scoreEl.innerText = "0"; bImg.src = selectedSrc;
     }
 
-    function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; loop(); }
-    function restartGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; loop(); }
+    function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; requestAnimationFrame(loop); }
+    function restartGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); gameRunning = true; requestAnimationFrame(loop); }
     
     function die() { 
         gameRunning = false; 
         const best = localStorage.getItem('naziraBestScore') || 0;
-        if(score > best) { localStorage.setItem('naziraBestScore', score); }
+        if(score > best) localStorage.setItem('naziraBestScore', score);
         updateBestScoreUI();
         document.getElementById('final-text').innerText = "Skor: " + score; 
         document.getElementById('over-menu').classList.remove('hidden'); 
     }
 
-    const act = () => { if(gameRunning) { bird.vel = jumpPower; } };
-    window.onmousedown = act;
-    window.ontouchstart = (e) => { if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') { e.preventDefault(); act(); } };
-
-    function playRandomMeow() {
-        let randomIdx;
-        do { randomIdx = Math.floor(Math.random() * sounds.length); } while (randomIdx === lastSoundIdx);
-        lastSoundIdx = randomIdx;
-        let s = sounds[randomIdx]; s.currentTime = 0; s.play().catch(()=>{});
-    }
-
-    function drawHeart(x, y, size, color, alpha) {
-        ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(x, y + size / 4);
-        ctx.quadraticCurveTo(x, y, x + size / 4, y);
-        ctx.quadraticCurveTo(x + size / 2, y, x + size / 2, y + size / 4);
-        ctx.quadraticCurveTo(x + size / 2, y, x + size * 3/4, y);
-        ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4);
-        ctx.quadraticCurveTo(x + size, y + size / 2, x + size / 2, y + size * 3/4);
-        ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4);
-        ctx.fill(); ctx.restore();
-    }
-
-    function createHearts(x, y) {
-        let selectedColors = []; let hasRed = false;
-        for(let i=0; i<3; i++) {
-            let possibleColors = [...heartColors];
-            if(hasRed) possibleColors = possibleColors.filter(c => c !== YELLOW && c !== ORANGE);
-            let color = possibleColors[Math.floor(Math.random() * possibleColors.length)];
-            if(color === RED) hasRed = true;
-            selectedColors.push(color);
-        }
-        selectedColors.forEach(color => {
-            particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, life: 1.0, size: Math.random() * 8 + 6, color: color });
-        });
-    }
+    window.onmousedown = () => { if(gameRunning) bird.vel = jumpPower; };
+    window.ontouchstart = (e) => { if(e.target.tagName !== 'BUTTON') { e.preventDefault(); if(gameRunning) bird.vel = jumpPower; } };
 
     function loop() {
-        if(!gameRunning) return; 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if(!gameRunning) return;
+        
+        ctx.fillStyle = "#70c5ce";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Arka Plan
         if(bgImg.complete) {
             bgX -= currentBgSpeed;
             if(bgX <= -canvas.width) bgX = 0;
@@ -258,63 +163,55 @@
 
         bird.vel += grav; bird.y += bird.vel;
 
+        // Karakter
         if(bImg.complete) {
-            ctx.save(); ctx.translate(bird.x + bird.w/2, bird.y + bird.h/2);
-            ctx.rotate(Math.max(-Math.PI/4, Math.min(Math.PI/4, bird.vel * 0.1)));
+            ctx.save();
+            ctx.translate(bird.x + bird.w/2, bird.y + bird.h/2);
+            ctx.rotate(Math.min(Math.PI/4, Math.max(-Math.PI/4, bird.vel * 0.1)));
             ctx.drawImage(bImg, -bird.w/2, -bird.h/2, bird.w, bird.h);
             ctx.restore();
         }
 
-        for(let i = treats.length - 1; i >= 0; i--) {
-            let t = treats[i]; t.y += t.vy; t.x -= currentSpeed;
-            ctx.beginPath(); ctx.fillStyle = "#795548"; ctx.arc(t.x, t.y, 9, 0, Math.PI * 2); ctx.fill();
-            if(t.y < -100 || t.y > canvas.height + 100) treats.splice(i, 1);
-        }
-
-        for(let i = particles.length - 1; i >= 0; i--) {
-            let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.015;
-            if(p.life <= 0) { particles.splice(i, 1); continue; }
-            drawHeart(p.x, p.y, p.size, p.color, p.life);
-        }
-
+        // Borular ve Mekanikler
         if(pipes.length === 0 || pipes[pipes.length-1].x < canvas.width - 250) {
             let h = Math.random() * (canvas.height - gap - 240) + 120;
-            pipes.push({ x: canvas.width, y: h, done: false, feed: false, topId: Math.floor(Math.random() * 5), botId: Math.floor(Math.random() * 5) });
+            pipes.push({ x: canvas.width, y: h, done: false, feed: false, tId: Math.floor(Math.random()*5), bId: Math.floor(Math.random()*5) });
         }
 
         for(let i = pipes.length - 1; i >= 0; i--) {
             let p = pipes[i]; p.x -= currentSpeed;
 
+            // Boru Geçişi ve Ses
             if(!p.feed && bird.x > p.x) {
-                p.feed = true; playRandomMeow();
-                createHearts(p.x + 45, p.y + (gap/2)); 
-                const isBonus = ((score + 1) % 10 === 0);
-                const count = isBonus ? 5 : 2;
-                for(let j=0; j<count; j++) treats.push({ x: bird.x + 20, y: bird.y, vy: (p.topId === yellowIndex) ? -7 : (p.botId === yellowIndex ? 7 : (j % 2 === 0 ? -8 : 8)) });
+                p.feed = true;
+                setTimeout(playRandomMeow, 0); // Sesi ana döngüyü bloklamaması için async tetikle
             }
 
+            // Boru Çizimi
             if(pSetImg.complete && pipeSpriteW) {
                 ctx.save(); ctx.translate(p.x + pipeW/2, p.y/2); ctx.scale(1, -1);
-                ctx.drawImage(pSetImg, p.topId * pipeSpriteW, 0, pipeSpriteW, pSetImg.height, -pipeW/2, -p.y/2, pipeW, p.y);
+                ctx.drawImage(pSetImg, p.tId * pipeSpriteW, 0, pipeSpriteW, pSetImg.height, -pipeW/2, -p.y/2, pipeW, p.y);
                 ctx.restore();
-                ctx.drawImage(pSetImg, p.botId * pipeSpriteW, 0, pipeSpriteW, pSetImg.height, p.x, p.y + gap, pipeW, canvas.height - (p.y + gap));
+                ctx.drawImage(pSetImg, p.bId * pipeSpriteW, 0, pipeSpriteW, pSetImg.height, p.x, p.y + gap, pipeW, canvas.height - (p.y + gap));
             }
 
-            const tol = 4;
-            if (bird.x + bird.w > p.x + tol && bird.x < p.x + pipeW - tol) {
+            // Çarpışma
+            if (bird.x + bird.w > p.x + 5 && bird.x < p.x + pipeW - 5) {
                 if (bird.y < p.y - 5 || bird.y + bird.h > p.y + gap + 5) { die(); return; }
             }
 
             if(!p.done && p.x + pipeW < bird.x) { 
                 score++; scoreEl.innerText = score; p.done = true; 
-                if(score > 0 && score % 5 === 0) { currentSpeed *= 1.05; currentBgSpeed *= 1.05; }
+                if(score % 5 === 0) { currentSpeed *= 1.05; currentBgSpeed *= 1.05; }
             }
-            if(p.x + pipeW < 0) pipes.splice(i, 1);
+            if(p.x + pipeW < -100) pipes.splice(i, 1);
         }
 
-        if(bird.y > canvas.height || bird.y < 0) { die(); return; }
-        requestId = requestAnimationFrame(loop);
+        if(bird.y > canvas.height || bird.y < -50) { die(); return; }
+        requestAnimationFrame(loop);
     }
+
+    updateBestScoreUI();
 </script>
 </body>
 </html>
