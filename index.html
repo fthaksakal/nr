@@ -29,8 +29,7 @@
         }
         
         #pause-btn {
-            position: absolute; top: 30px; left: 30px; 
-            width: 50px; height: 50px; 
+            position: absolute; top: 30px; left: 30px; width: 50px; height: 50px; 
             background: white; border: none; border-radius: 12px;
             color: #2196f3; font-size: 24px; font-weight: bold; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
@@ -63,7 +62,7 @@
 <div id="info-modal" class="hidden">
     <div class="modal-content">
         <h3>Hakkında</h3>
-        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz. Dikkat çiçiko piçikoluk yapabilir.</p>
+        <p>Nazira kedileri çok sever, ne zaman kedi görse onları beslemek ister. Onun rüyasını oynadığımız bu oyunda asla aç kedi kalmamasını hedefliyoruz ama dikkat sarman kedi bi sarmanlık yapabilir.</p>
         <span style="font-weight: bold; color: #2196f3;">Geliştirici: Fatih Aksakal</span>
         <button onclick="closeInfo()" style="margin-top: 20px; font-size: 16px; padding: 10px;">Kapat</button>
     </div>
@@ -132,7 +131,6 @@
     const baseSpeed = 2.8, baseBgSpeed = 1.2;
     const grav = 0.25, jumpPower = -4.5, gap = 185;
 
-    // Smooth Transition için dikey sınır değişkeni
     let lastPipeY = canvas.height / 2 - gap / 2;
 
     const bImg = new Image();
@@ -178,7 +176,7 @@
         pipes = []; treats = []; particles = []; score = 0; bgX = 0; 
         currentSpeed = baseSpeed; currentBgSpeed = baseBgSpeed; 
         scoreEl.innerText = "0"; bImg.src = selectedSrc; isPaused = false;
-        lastPipeY = canvas.height / 2 - gap / 2; // Yükseklik hafızasını sıfırla
+        lastPipeY = canvas.height / 2 - gap / 2;
     }
 
     function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); pauseBtn.classList.remove('hidden'); gameRunning = true; loop(); }
@@ -215,20 +213,10 @@
         }
 
         if(pipes.length === 0 || pipes[pipes.length-1].x < canvas.width - 250) {
-            // OPTİMİZE EDİLMİŞ RASTGELELİK:
-            // Bir sonraki boru, bir öncekinden en fazla 160px uzaklıkta olabilir
-            const maxDiff = 160; 
-            const minH = 100;
-            const maxH = canvas.height - gap - 120;
-            
+            const maxDiff = 160; const minH = 100; const maxH = canvas.height - gap - 120;
             let h = lastPipeY + (Math.random() * (maxDiff * 2) - maxDiff);
-            
-            // Ekran sınırlarını koru
-            if (h < minH) h = minH + Math.random() * 50;
-            if (h > maxH) h = maxH - Math.random() * 50;
-            
-            lastPipeY = h; // Bir sonraki hesaplama için kaydet
-
+            if (h < minH) h = minH + Math.random() * 50; if (h > maxH) h = maxH - Math.random() * 50;
+            lastPipeY = h;
             let tId = Math.floor(Math.random()*5), bId;
             do { bId = Math.floor(Math.random()*5); } while(bId === tId);
             pipes.push({ x: canvas.width, y: h, done: false, feed: false, tId, bId });
@@ -239,12 +227,30 @@
             if(!p.feed && bird.x > p.x) {
                 p.feed = true; createHearts(p.x+45, p.y+gap/2);
                 let isBonus = ((score + 1) % 10 === 0);
+                
+                // MAMA SAYISI VE YATAY BOŞLUK GÜNCELLEMESİ
                 if (p.tId === yellowIndex || p.bId === yellowIndex) {
                     playMeow();
                     let targetY = (p.tId === yellowIndex) ? p.y - 20 : p.y + gap + 20;
-                    for(let j=0; j < (isBonus ? 10 : 2); j++) treats.push({ x: bird.x, y: bird.y, vy: (targetY - bird.y)/20 + (Math.random()*4 - 2) });
+                    // Sarı kedi bonusu: 6 mama (aralıklı fırlatma)
+                    let count = isBonus ? 6 : 2;
+                    for(let j=0; j < count; j++) {
+                        treats.push({ 
+                            x: bird.x - (j * 20), // Yatay boşluk (mama-boşluk-mama etkisi)
+                            y: bird.y, 
+                            vy: (targetY - bird.y)/20 + (Math.random()*4 - 2) 
+                        });
+                    }
                 } else {
-                    for(let j=0; j < (isBonus ? 5 : 2); j++) treats.push({ x: bird.x, y: bird.y, vy: (j % 2 === 0 ? -3 : 3) + (Math.random()*2 - 1) });
+                    // Standart bonus: 3 mama (aralıklı fırlatma)
+                    let count = isBonus ? 3 : 2;
+                    for(let j=0; j < count; j++) {
+                        treats.push({ 
+                            x: bird.x - (j * 20), // Yatay boşluk
+                            y: bird.y, 
+                            vy: (j % 2 === 0 ? -3 : 3) + (Math.random()*2 - 1) 
+                        });
+                    }
                 }
             }
             if(pSetImg.complete && pipeSpriteW) {
