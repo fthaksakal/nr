@@ -28,7 +28,6 @@
             display: flex; justify-content: center; align-items: center;
         }
         
-        /* Pause Butonu Stili */
         #pause-btn {
             position: absolute; top: 30px; left: 30px; 
             width: 50px; height: 50px; 
@@ -146,46 +145,11 @@
     function closeInfo() { document.getElementById('info-modal').classList.add('hidden'); }
     function hideAll() { ['main-menu', 'char-menu', 'settings-menu', 'over-menu', 'pause-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); }
     
-    function showMainMenu() { 
-        hideAll(); 
-        document.getElementById('main-menu').classList.remove('hidden'); 
-        scoreEl.classList.add('hidden'); 
-        pauseBtn.classList.add('hidden');
-        updateBestScoreUI(); 
-        gameRunning = false; 
-        isPaused = false;
-    }
-
+    function showMainMenu() { hideAll(); document.getElementById('main-menu').classList.remove('hidden'); scoreEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); updateBestScoreUI(); gameRunning = false; isPaused = false; }
     function showCharacterSelect() { hideAll(); document.getElementById('char-menu').classList.remove('hidden'); }
-    
-    function showSettings(from = 'main') { 
-        hideAll(); 
-        const saveBtn = document.getElementById('settings-save-btn');
-        if(from === 'pause') {
-            saveBtn.onclick = () => { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); };
-        } else {
-            saveBtn.onclick = showMainMenu;
-        }
-        document.getElementById('settings-menu').classList.remove('hidden'); 
-    }
-
-    function togglePause() {
-        if(!gameRunning) return;
-        isPaused = !isPaused;
-        if(isPaused) {
-            hideAll();
-            document.getElementById('pause-menu').classList.remove('hidden');
-        } else {
-            hideAll();
-            loop(); // Döngüyü tekrar başlat
-        }
-    }
-    
-    function updateVolume(val) { 
-        globalVolume = parseFloat(val); 
-        sounds.forEach(s => { s.volume = globalVolume; }); 
-    }
-
+    function showSettings(from = 'main') { hideAll(); const saveBtn = document.getElementById('settings-save-btn'); if(from === 'pause') { saveBtn.onclick = () => { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); }; } else { saveBtn.onclick = showMainMenu; } document.getElementById('settings-menu').classList.remove('hidden'); }
+    function togglePause() { if(!gameRunning) return; isPaused = !isPaused; if(isPaused) { hideAll(); document.getElementById('pause-menu').classList.remove('hidden'); } else { hideAll(); loop(); } }
+    function updateVolume(val) { globalVolume = parseFloat(val); sounds.forEach(s => { s.volume = globalVolume; }); }
     function playMeow() { if(globalVolume > 0) { let s = sounds[Math.floor(Math.random()*sounds.length)]; s.currentTime = 0; s.play().catch(()=>{}); } }
 
     function drawHeart(x, y, size, color, alpha) {
@@ -203,54 +167,27 @@
     function createHearts(x, y) {
         let selectedColors = [...heartColors].sort(() => 0.5 - Math.random()).slice(0, 3);
         selectedColors.forEach(color => {
-            particles.push({ x, y, vx: (Math.random()-0.5)*2.5, vy: (Math.random()-0.5)*2.5, life: 1.0, size: Math.random()*8+6, color: color });
+            particles.push({ 
+                x, y, 
+                // Saçılım (dağılım) hızı yarı yarıya azaltıldı
+                vx: (Math.random()-0.5)*1.2, 
+                vy: (Math.random()-0.5)*1.2, 
+                // Saydamlık bi tık artırıldı (daha şeffaf başlar ve daha hızlı yok olur)
+                life: 0.7, 
+                // Boyut bi tık küçültüldü
+                size: Math.random()*6+4, 
+                color: color 
+            });
         });
     }
 
-    function init() {
-        bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 };
-        pipes = []; treats = []; particles = []; score = 0; bgX = 0;
-        currentSpeed = baseSpeed; currentBgSpeed = baseBgSpeed;
-        scoreEl.innerText = "0"; bImg.src = selectedSrc;
-        isPaused = false;
-    }
+    function init() { bird = { x: 60, y: canvas.height/2, w: 40, h: 30, vel: 0 }; pipes = []; treats = []; particles = []; score = 0; bgX = 0; currentSpeed = baseSpeed; currentBgSpeed = baseBgSpeed; scoreEl.innerText = "0"; bImg.src = selectedSrc; isPaused = false; }
+    function startGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); pauseBtn.classList.remove('hidden'); gameRunning = true; loop(); }
+    function restartGame() { hideAll(); init(); scoreEl.classList.remove('hidden'); pauseBtn.classList.remove('hidden'); gameRunning = true; loop(); }
+    function die() { gameRunning = false; pauseBtn.classList.add('hidden'); const best = localStorage.getItem('naziraBestScore') || 0; if(score > best) localStorage.setItem('naziraBestScore', score); updateBestScoreUI(); document.getElementById('final-text').innerText = "Skor: " + score; document.getElementById('over-menu').classList.remove('hidden'); }
 
-    function startGame() { 
-        hideAll(); 
-        init(); 
-        scoreEl.classList.remove('hidden'); 
-        pauseBtn.classList.remove('hidden');
-        gameRunning = true; 
-        loop(); 
-    }
-
-    function restartGame() { 
-        hideAll(); 
-        init(); 
-        scoreEl.classList.remove('hidden'); 
-        pauseBtn.classList.remove('hidden');
-        gameRunning = true; 
-        loop(); 
-    }
-    
-    function die() { 
-        gameRunning = false; 
-        pauseBtn.classList.add('hidden');
-        const best = localStorage.getItem('naziraBestScore') || 0;
-        if(score > best) localStorage.setItem('naziraBestScore', score);
-        updateBestScoreUI();
-        document.getElementById('final-text').innerText = "Skor: " + score; 
-        document.getElementById('over-menu').classList.remove('hidden'); 
-    }
-
-    window.onmousedown = (e) => { 
-        if(e.target.id === 'pause-btn') return;
-        if(gameRunning && !isPaused) bird.vel = jumpPower; 
-    };
-    window.ontouchstart = (e) => { 
-        if(e.target.id === 'pause-btn' || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-        if(gameRunning && !isPaused) { e.preventDefault(); bird.vel = jumpPower; } 
-    };
+    window.onmousedown = (e) => { if(e.target.id === 'pause-btn') return; if(gameRunning && !isPaused) bird.vel = jumpPower; };
+    window.ontouchstart = (e) => { if(e.target.id === 'pause-btn' || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return; if(gameRunning && !isPaused) { e.preventDefault(); bird.vel = jumpPower; } };
 
     function loop() {
         if(!gameRunning || isPaused) return;
@@ -273,7 +210,9 @@
         }
 
         for(let i = particles.length-1; i>=0; i--) {
-            let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.025;
+            let p = particles[i]; p.x += p.vx; p.y += p.vy; 
+            // Daha narin yok olma efekti
+            p.life -= 0.03; 
             if(p.life <= 0) { particles.splice(i,1); continue; }
             drawHeart(p.x, p.y, p.size, p.color, p.life);
         }
@@ -304,13 +243,8 @@
                 ctx.restore();
                 ctx.drawImage(pSetImg, p.bId*pipeSpriteW, 0, pipeSpriteW, pSetImg.height, p.x, p.y+gap, 90, canvas.height-(p.y+gap));
             }
-            if (bird.x + 35 > p.x + 5 && bird.x < p.x + 85) {
-                if (bird.y < p.y - 5 || bird.y + 25 > p.y + gap + 5) { die(); return; }
-            }
-            if(!p.done && p.x + 90 < bird.x) { 
-                score++; scoreEl.innerText = score; p.done = true; 
-                if(score % 5 === 0) { currentSpeed *= 1.05; currentBgSpeed *= 1.05; }
-            }
+            if (bird.x + 35 > p.x + 5 && bird.x < p.x + 85) { if (bird.y < p.y - 5 || bird.y + 25 > p.y + gap + 5) { die(); return; } }
+            if(!p.done && p.x + 90 < bird.x) { score++; scoreEl.innerText = score; p.done = true; if(score % 5 === 0) { currentSpeed *= 1.05; currentBgSpeed *= 1.05; } }
             if(p.x < -100) pipes.splice(i,1);
         }
 
@@ -318,11 +252,7 @@
         requestAnimationFrame(loop);
     }
 
-    function updateBestScoreUI() {
-        const best = localStorage.getItem('naziraBestScore') || 0;
-        document.getElementById('best-score-main').innerText = "En İyi: " + best;
-        document.getElementById('best-score-over').innerText = "En İyi: " + best;
-    }
+    function updateBestScoreUI() { const best = localStorage.getItem('naziraBestScore') || 0; document.getElementById('best-score-main').innerText = "En İyi: " + best; document.getElementById('best-score-over').innerText = "En İyi: " + best; }
     updateBestScoreUI();
 </script>
 </body>
